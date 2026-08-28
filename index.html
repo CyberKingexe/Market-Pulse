@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="fa">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<title>قیمت لحظه‌ای ارز، طلا و سکه</title>
+<script>
+(function(){
+  try {
+    var t = localStorage.getItem('prices-theme');
+    if (t === 'dark') document.documentElement.classList.add('dark-pending');
+  } catch(e){}
+})();
+</script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  --bg:#f2f3f6; --surface:#ffffff; --surface-2:#f7f8fa;
+  --border:#e4e7ec; --text:#16202f; --text-2:#4b5768; --text-3:#94a0b0;
+  --primary:#1e3a5f; --primary-2:#14283f; --accent:#2f6fb0; --accent-2:#5fa8e0; --sni:#2f6fb0;
+  --up:#1a9e5a; --down:#d1453b;
+  --radius-lg:18px; --radius:14px; --radius-sm:10px;
+  --shadow:0 1px 2px rgba(15,23,42,.05),0 10px 28px rgba(15,23,42,.07);
+  --shadow-lg:0 2px 6px rgba(15,23,42,.07),0 20px 52px rgba(15,23,42,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+::-webkit-scrollbar{width:8px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--accent);border-radius:4px;}
+::-webkit-scrollbar-thumb:hover{background:var(--primary);}
+
+body{
+  font-family:'Vazirmatn',Tahoma,Arial,sans-serif;
+  background:var(--bg);color:var(--text);
+  min-height:100vh;line-height:1.6;
+  transition:background .3s,color .3s;
+  -webkit-font-smoothing:antialiased;
+}
+body::before{
+  content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(ellipse 1200px 600px at 50% -100px,color-mix(in srgb,var(--primary) 7%,transparent),transparent 70%);
+}
+::selection{background:color-mix(in srgb,var(--sni) 25%,transparent);}
+:focus-visible{outline:2px solid var(--sni);outline-offset:2px;}
+
+html.dark-pending body,body.dark{
+  --bg:#0b0f16;--surface:#121826;--surface-2:#171f30;--border:#263248;
+  --text:#e8ecf5;--text-2:#939fb5;--text-3:#5c6780;
+  --accent:#5fa8e0;--accent-2:#8cc4ef;--sni:#5fa8e0;
+  --up:#2ec26f;--down:#ef5b50;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 28px rgba(0,0,0,.35);
+  --shadow-lg:0 2px 6px rgba(0,0,0,.35),0 20px 52px rgba(0,0,0,.5);
+  background:var(--bg);color:var(--text);
+}
+
+@keyframes holo-shift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+.header{
+  position:sticky;top:0;z-index:200;
+  background:linear-gradient(120deg,#14283f,#1e3a5f,#223f66);
+  background-size:220% 220%;animation:holo-shift 26s ease infinite;
+  color:#fff;
+  box-shadow:0 2px 0 var(--accent-2),0 1px 0 rgba(255,255,255,.12) inset,0 6px 22px rgba(15,23,42,.28);
+  border-bottom:1px solid rgba(255,255,255,.06);
+}
+body.dark .header{
+  background:linear-gradient(120deg,#0a121e,#14243a,#182c46);
+  background-size:220% 220%;
+  box-shadow:0 2px 0 var(--accent-2),0 1px 0 rgba(255,255,255,.06) inset,0 6px 22px rgba(0,0,0,.45);
+}
+.header-inner{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:14px 16px;flex-wrap:wrap;
+}
+.header h1{
+  font-size:1.05rem;font-weight:800;letter-spacing:-.01em;
+  display:flex;align-items:center;gap:8px;
+  text-shadow:0 1px 3px rgba(0,0,0,.25);white-space:nowrap;
+  order:1;
+}
+.header-clock{
+  display:flex;flex-direction:column;align-items:center;gap:1px;
+  font-variant-numeric:tabular-nums;
+  order:3;flex-basis:100%;margin-top:12px;text-align:center;
+}
+.header-clock .country{
+  font-size:.72rem;font-weight:600;color:rgba(255,255,255,.75);
+  display:flex;align-items:center;justify-content:center;gap:5px;
+}
+.header-clock .time{
+  font-size:1.2rem;font-weight:800;letter-spacing:.03em;
+  text-shadow:0 1px 3px rgba(0,0,0,.25);
+}
+.header-clock .date{font-size:.72rem;color:rgba(255,255,255,.8);}
+.header-actions{display:flex;gap:8px;flex-shrink:0;align-items:center;order:2;}
+.icon-btn{
+  background:rgba(255,255,255,.1);backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,.18);color:#fff;
+  width:40px;height:40px;border-radius:var(--radius-sm);
+  font-size:1.1rem;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .25s ease;
+}
+.icon-btn:hover{
+  background:rgba(255,255,255,.2);border-color:var(--accent-2);
+  box-shadow:0 0 0 3px rgba(95,168,224,.22);
+}
+.icon-btn.spinning{animation:spin 0.7s linear;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+@keyframes fade-up{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.wrap{max-width:1100px;margin:0 auto;padding:16px 16px 56px;animation:fade-up .4s ease;}
+
+.status-bar{
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:10px 16px;margin-bottom:16px;box-shadow:var(--shadow);font-size:.82rem;color:var(--text-2);
+}
+.status-bar .dot{
+  display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--up);margin-left:6px;
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--up) 25%,transparent);
+  animation:pulse-dot 1.8s ease infinite;
+}
+.status-bar .dot.err{background:var(--down);box-shadow:0 0 0 3px color-mix(in srgb,var(--down) 25%,transparent);}
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.4}}
+.status-bar b{color:var(--text);}
+
+.section-title{
+  display:flex;align-items:center;gap:8px;
+  font-size:1rem;font-weight:800;margin:22px 0 10px;color:var(--text);
+}
+.section-title .cnt{
+  font-size:.72rem;font-weight:600;color:var(--text-3);background:var(--surface-2);
+  border:1px solid var(--border);border-radius:20px;padding:2px 9px;
+}
+
+.cards-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:stretch;}
+@media(min-width:600px){.cards-grid{grid-template-columns:repeat(3,1fr);gap:14px;}}
+@media(min-width:900px){.cards-grid{grid-template-columns:repeat(4,1fr);gap:16px;}}
+@media(min-width:1200px){.cards-grid{grid-template-columns:repeat(5,1fr);}}
+@media(min-width:1600px){.cards-grid{grid-template-columns:repeat(6,1fr);}}
+
+.card{
+  position:relative;
+  background:var(--surface);border-radius:var(--radius-lg);
+  padding:16px 18px;
+  box-shadow:var(--shadow);border:1px solid var(--border);
+  border-right:3px solid var(--accent);
+  transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease;
+  display:flex;flex-direction:column;gap:6px;
+  cursor:default;
+}
+.card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg);border-right-color:var(--sni);}
+.card .top-row{display:flex;align-items:center;justify-content:space-between;gap:6px;}
+.card h3{font-size:.86rem;font-weight:700;letter-spacing:-.005em;color:var(--text-2);}
+.card .icon{font-size:1.15rem;}
+.card .price{
+  display:flex;flex-direction:column;align-items:flex-end;gap:2px;
+  font-weight:800;color:var(--text);
+}
+.card .price .num{
+  font-size:1.28rem;letter-spacing:-.01em;
+  font-variant-numeric:tabular-nums;direction:ltr;
+  word-break:break-word;
+}
+.card .unit{font-size:.68rem;font-weight:600;color:var(--text-3);}
+.card .change{
+  display:inline-flex;align-items:center;gap:3px;width:fit-content;
+  font-size:.74rem;font-weight:700;border-radius:8px;padding:2px 8px;
+  font-variant-numeric:tabular-nums;direction:ltr;
+}
+.card .change.up{color:var(--up);background:color-mix(in srgb,var(--up) 12%,transparent);}
+.card .change.down{color:var(--down);background:color-mix(in srgb,var(--down) 12%,transparent);}
+.card .change.flat{color:var(--text-3);background:var(--surface-2);}
+.card .updated{font-size:.66rem;color:var(--text-3);margin-top:2px;}
+.card.skeleton .price{color:transparent;background:var(--surface-2);border-radius:6px;}
+.card.skeleton .change{visibility:hidden;}
+.card.na{opacity:.55;}
+.card.flash{animation:flash-bg .8s ease;}
+@keyframes flash-bg{0%{background:color-mix(in srgb,var(--accent) 14%,var(--surface));}100%{background:var(--surface);}}
+
+.site-footer{
+  text-align:center;color:var(--text-3);font-size:.72rem;
+  margin-top:30px;padding-top:16px;border-top:1px solid var(--border);
+}
+
+@media(min-width:900px){
+  .header-inner{padding:16px 40px;max-width:1440px;margin:0 auto;flex-wrap:nowrap;}
+  .header h1{font-size:1.25rem;order:0;}
+  .header-clock{order:0;flex-basis:auto;margin-top:0;align-items:flex-end;text-align:right;}
+  .header-clock .country{justify-content:flex-end;}
+  .header-actions{order:0;}
+  .wrap{padding:32px 40px 72px;}
+
+  .status-bar{padding:12px 20px;font-size:.86rem;}
+
+  .section-title{font-size:1.12rem;margin:28px 0 14px;}
+
+  .card{padding:20px 22px;border-radius:20px;gap:8px;}
+  .card h3{font-size:.92rem;}
+  .card .price .num{font-size:1.5rem;}
+  .card .change{font-size:.78rem;}
+  .card:hover{transform:translateY(-5px);}
+
+  .icon-btn{width:42px;height:42px;font-size:1.15rem;}
+}
+
+@media(min-width:1200px){
+  .wrap{max-width:1440px;margin:0 auto;}
+}
+
+@media(min-width:1600px){
+  .header-inner{max-width:1680px;padding:18px 60px;}
+  .wrap{max-width:1680px;padding:36px 60px 80px;}
+  .card .price .num{font-size:1.6rem;}
+  .section-title{font-size:1.2rem;}
+}
+</style>
+<!-- PWA START -->
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#0b1020">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="قیمت لحظه‌ای">
+<link rel="icon" type="image/png" sizes="32x32" href="./icons/icon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="./icons/icon-512.png">
+<link rel="apple-touch-icon" sizes="180x180" href="./icons/icon-180.png">
+<!-- PWA END -->
+
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <h1>💰 قیمت لحظه‌ای ارز، طلا و سکه</h1>
+    <div class="header-clock">
+      <span class="country">🇮🇷 ایران، تهران</span>
+      <span class="time" id="clockTime">--:--:--</span>
+      <span class="date" id="clockDate">در حال بارگذاری تاریخ...</span>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn" onclick="toggleDark()" title="حالت شب">🌙</button>
+      <button class="icon-btn" id="refreshBtn" onclick="manualRefresh()" title="تازه‌سازی">🔄</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="status-bar">
+    <span><span class="dot" id="statusDot"></span><b id="statusText">در حال اتصال به سرویس قیمت...</b></span>
+    <span>آخرین بروزرسانی: <b id="lastUpdate">—</b> &nbsp;|&nbsp; بروزرسانی بعدی تا <b id="countdown">60</b> ثانیه</span>
+  </div>
+
+  <div class="section-title">💵 ارزها <span class="cnt">هر ۶۰ ثانیه</span></div>
+  <div class="cards-grid" id="grid-currency"></div>
+
+  <div class="section-title">🪙 ارز دیجیتال</div>
+  <div class="cards-grid" id="grid-crypto"></div>
+
+  <div class="section-title">🥇 طلا</div>
+  <div class="cards-grid" id="grid-gold"></div>
+
+  <div class="section-title">🟡 سکه</div>
+  <div class="cards-grid" id="grid-coin"></div>
+
+  <div class="site-footer">
+    قیمت‌ها از وب‌سرویس BrsApi.ir دریافت می‌شوند و صرفاً جنبه اطلاع‌رسانی دارند؛ برای معاملات از منابع رسمی اطمینان حاصل کنید.
+  </div>
+</div>
+
+<script>
+/* ══════════ Config ══════════ */
+var API_KEY = 'B5xWKJcKJ8DXYyT8L5FYyn6QQkmMNYfR';
+var API_URL = 'https://Api.BrsApi.ir/Market/Gold_Currency.php?key=' + API_KEY;
+var REFRESH_MS = 60000; /* 1 minute */
+
+/* Items to display: id, section, label, icon, keyword list to match against API item name/name_en/symbol */
+var ITEMS = [
+  {id:'usd', section:'currency', label:'دلار آمریکا', icon:'💵', sym:'USD', kw:['دلار امریکا','دلار آمریکا']},
+  {id:'eur', section:'currency', label:'یورو',        icon:'💶', sym:'EUR', kw:['یورو']},
+
+  {id:'usdt', section:'crypto', label:'تتر',      icon:'🟢', sym:'USDT_IRT', kw:['تتر']},
+  {id:'btc',  section:'crypto', label:'بیت‌کوین', icon:'🟠', sym:'BTC', kw:['بیت کوین','بیت‌کوین']},
+
+  {id:'melted', section:'gold', label:'طلای آبشده (مثقال)', icon:'🥇', sym:'IR_GOLD_MELTED', kw:['آبشده']},
+  {id:'g18',    section:'gold', label:'طلای ۱۸ عیار',        icon:'🥇', sym:'IR_GOLD_18K', kw:['18 عیار','۱۸ عیار']},
+  {id:'g24',    section:'gold', label:'طلای ۲۴ عیار',        icon:'🥇', sym:'IR_GOLD_24K', kw:['24 عیار','۲۴ عیار']},
+  {id:'ounce',  section:'gold', label:'انس جهانی طلا',        icon:'🌍', sym:'XAUUSD', kw:['انس طلا','انس جهانی']},
+
+  {id:'emami',   section:'coin', label:'سکه امامی (طرح جدید)', icon:'🟡', sym:'IR_COIN_EMAMI', kw:['امامی']},
+  {id:'bahar',   section:'coin', label:'سکه بهار آزادی',       icon:'🟡', sym:'IR_COIN_BAHAR', kw:['بهار آزادی','بهار ازادی']},
+  {id:'half',    section:'coin', label:'نیم سکه',              icon:'🟡', sym:'IR_COIN_HALF', kw:['نیم سکه']},
+  {id:'quarter', section:'coin', label:'ربع سکه',              icon:'🟡', sym:'IR_COIN_QUARTER', kw:['ربع سکه']},
+  {id:'gerami',  section:'coin', label:'سکه گرمی',             icon:'🟡', sym:'IR_COIN_1G', kw:['گرمی','یک گرمی']}
+];
+
+/* ══════════ Clock (Iran / Tehran, live, exact) ══════════ */
+function updateClock(){
+  var now = new Date();
+  var timeFmt = new Intl.DateTimeFormat('fa-IR', {hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false,timeZone:'Asia/Tehran'});
+  var dateFmt = new Intl.DateTimeFormat('fa-IR-u-ca-persian', {weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:'Asia/Tehran'});
+  document.getElementById('clockTime').textContent = timeFmt.format(now);
+  document.getElementById('clockDate').textContent = dateFmt.format(now);
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+/* ══════════ Countdown to next refresh ══════════ */
+var secondsLeft = REFRESH_MS/1000;
+function tickCountdown(){
+  secondsLeft--;
+  if(secondsLeft <= 0) secondsLeft = REFRESH_MS/1000;
+  document.getElementById('countdown').textContent = secondsLeft;
+}
+setInterval(tickCountdown, 1000);
+
+/* ══════════ Build skeleton cards once ══════════ */
+var grids = {currency:'grid-currency', crypto:'grid-crypto', gold:'grid-gold', coin:'grid-coin'};
+ITEMS.forEach(function(it){
+  var grid = document.getElementById(grids[it.section]);
+  var card = document.createElement('div');
+  card.className = 'card skeleton';
+  card.id = 'card-' + it.id;
+  card.innerHTML =
+    '<div class="top-row"><h3>'+it.icon+' '+it.label+'</h3></div>'+
+    '<div class="price" id="price-'+it.id+'">در حال دریافت...</div>'+
+    '<div class="change flat" id="change-'+it.id+'">—</div>'+
+    '<div class="updated" id="upd-'+it.id+'"></div>';
+  grid.appendChild(card);
+});
+
+/* ══════════ Fetch + parse ══════════ */
+function collectItems(obj, out){
+  if(!obj || typeof obj !== 'object') return out;
+  if(Array.isArray(obj)){
+    obj.forEach(function(x){ collectItems(x, out); });
+    return out;
+  }
+  var hasPrice = ('price' in obj) || ('p' in obj) || ('value' in obj);
+  var hasName = ('name' in obj) || ('name_en' in obj) || ('symbol' in obj) || ('title' in obj);
+  if(hasPrice && hasName){ out.push(obj); }
+  Object.keys(obj).forEach(function(k){
+    var v = obj[k];
+    if(v && typeof v === 'object') collectItems(v, out);
+  });
+  return out;
+}
+
+function itemText(item){
+  return [item.name, item.name_en, item.symbol, item.title].filter(Boolean).join(' | ').toLowerCase();
+}
+
+function findMatch(allItems, it){
+  for(var i=0;i<allItems.length;i++){
+    if(allItems[i].symbol && it.sym && String(allItems[i].symbol).toUpperCase() === it.sym.toUpperCase()){
+      return allItems[i];
+    }
+  }
+  for(var i=0;i<allItems.length;i++){
+    var txt = itemText(allItems[i]);
+    for(var k=0;k<it.kw.length;k++){
+      if(txt.indexOf(it.kw[k].toLowerCase()) !== -1) return allItems[i];
+    }
+  }
+  return null;
+}
+
+function fmtNumber(n){
+  if(n === null || n === undefined || isNaN(n)) return '—';
+  return Number(n).toLocaleString('en-US');
+}
+
+function renderItem(it, dataItem){
+  var priceEl = document.getElementById('price-'+it.id);
+  var changeEl = document.getElementById('change-'+it.id);
+  var updEl = document.getElementById('upd-'+it.id);
+  var cardEl = document.getElementById('card-'+it.id);
+  cardEl.classList.remove('skeleton');
+
+  if(!dataItem){
+    cardEl.classList.add('na');
+    priceEl.textContent = 'یافت نشد';
+    changeEl.className = 'change flat';
+    changeEl.textContent = '—';
+    updEl.textContent = '';
+    return;
+  }
+  cardEl.classList.remove('na');
+
+  var price = dataItem.price !== undefined ? dataItem.price : (dataItem.p !== undefined ? dataItem.p : dataItem.value);
+  var unit = dataItem.unit || 'تومان';
+  var oldText = priceEl.textContent;
+  priceEl.innerHTML = '<span class="num">'+fmtNumber(price)+'</span><span class="unit">'+unit+'</span>';
+  if(oldText !== priceEl.textContent){
+    cardEl.classList.remove('flash'); void cardEl.offsetWidth; cardEl.classList.add('flash');
+  }
+
+  var changePct = dataItem.change_percent !== undefined ? dataItem.change_percent : dataItem.percent;
+  var changeVal = dataItem.change_value !== undefined ? dataItem.change_value : dataItem.change;
+  var num = parseFloat(changePct !== undefined ? changePct : changeVal);
+  if(!isNaN(num)){
+    var sign = num > 0 ? '+' : '';
+    changeEl.className = 'change ' + (num > 0 ? 'up' : (num < 0 ? 'down' : 'flat'));
+    changeEl.textContent = (num > 0 ? '▲ ' : (num < 0 ? '▼ ' : '')) + sign + num + (changePct !== undefined ? '%' : '');
+  } else {
+    changeEl.className = 'change flat';
+    changeEl.textContent = '—';
+  }
+
+  var timeStr = dataItem.time || dataItem.date || '';
+  updEl.textContent = timeStr ? ('بروزرسانی داده: ' + timeStr) : '';
+}
+
+function setStatus(ok, msg){
+  var dot = document.getElementById('statusDot');
+  var txt = document.getElementById('statusText');
+  dot.className = 'dot' + (ok ? '' : ' err');
+  txt.textContent = msg;
+}
+
+/* Public CORS relays, tried in order, used only if the direct request fails
+   (e.g. when the API has no Access-Control-Allow-Origin header, which is
+   common for services meant to be called from server-side PHP/Python). */
+var CORS_PROXIES = [
+  function(url){ return 'https://corsproxy.io/?url=' + encodeURIComponent(url); },
+  function(url){ return 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url); }
+];
+
+function fetchJsonWithFallback(url, proxyIndex){
+  proxyIndex = proxyIndex || 0;
+  var target = proxyIndex === 0 ? url : CORS_PROXIES[proxyIndex - 1](url);
+  return fetch(target, {cache:'no-store'}).then(function(res){
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    return res.json();
+  }).catch(function(err){
+    if(proxyIndex < CORS_PROXIES.length){
+      return fetchJsonWithFallback(url, proxyIndex + 1);
+    }
+    throw err;
+  });
+}
+
+var isLoading = false;
+var refreshTimer = null;
+
+function scheduleNextRefresh(){
+  if(refreshTimer) clearTimeout(refreshTimer);
+  refreshTimer = setTimeout(loadPrices, REFRESH_MS);
+}
+
+function loadPrices(){
+  if(isLoading) return;
+  isLoading = true;
+  var btn = document.getElementById('refreshBtn');
+  btn.classList.add('spinning');
+  setStatus(true, 'در حال دریافت قیمت‌های لحظه‌ای...');
+
+  fetchJsonWithFallback(API_URL)
+    .then(function(data){
+      var all = collectItems(data, []);
+      if(all.length === 0) throw new Error('پاسخ سرویس خالی یا نامعتبر بود');
+
+      ITEMS.forEach(function(it){
+        var match = findMatch(all, it);
+        renderItem(it, match);
+      });
+
+      setStatus(true, 'قیمت‌ها بروزرسانی شد');
+      var now = new Intl.DateTimeFormat('fa-IR', {hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false,timeZone:'Asia/Tehran'}).format(new Date());
+      document.getElementById('lastUpdate').textContent = now;
+    })
+    .catch(function(err){
+      setStatus(false, 'خطا در دریافت اطلاعات: ' + err.message + ' — کلید API یا اتصال اینترنت را بررسی کنید.');
+    })
+    .finally(function(){
+      isLoading = false;
+      secondsLeft = REFRESH_MS/1000;
+      scheduleNextRefresh();
+      setTimeout(function(){ btn.classList.remove('spinning'); }, 700);
+    });
+}
+
+function manualRefresh(){
+  if(isLoading) return;
+  loadPrices();
+}
+
+function toggleDark(){
+  document.body.classList.toggle('dark');
+  try{ localStorage.setItem('prices-theme', document.body.classList.contains('dark') ? 'dark' : 'light'); }catch(e){}
+}
+if(document.documentElement.classList.contains('dark-pending')){
+  document.body.classList.add('dark');
+  document.documentElement.classList.remove('dark-pending');
+}
+
+/* ══════════ Init ══════════ */
+loadPrices();
+</script>
+<!-- PWA Service Worker -->
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function () {
+    navigator.serviceWorker.register("./service-worker.js", {scope:"./"})
+      .catch(function(error){ console.warn("PWA Service Worker:", error); });
+  });
+}
+</script>
+
+</body>
+</html>
